@@ -1,6 +1,6 @@
 # YCS Auto Minimize
 
-A script to minimize the [YCS](https://chromewebstore.google.com/detail/ycs-youtube-comment-searc/pmfhcilikeembgbiadjiojgfgcfbcoaa?hl=en) (YouTube Comment Search) and [YCScont](https://chromewebstore.google.com/detail/ycs-youtube-comment-searc/mfobjniokjbcldieppimekoibpocahed?hl=en) menu on YouTube pages, saving screen real estate. 
+A user script to minimize the [YCS](https://chromewebstore.google.com/detail/ycs-youtube-comment-searc/pmfhcilikeembgbiadjiojgfgcfbcoaa?hl=en) (YouTube Comment Search) and [YCScont](https://chromewebstore.google.com/detail/ycs-youtube-comment-searc/mfobjniokjbcldieppimekoibpocahed?hl=en) menu on YouTube pages, saving screen real estate. 
 This script auto-toggles between minimized and maximized states based on your preferences. The menu is minimized by default, and the state is remembered across page reloads.
 
 ## Features
