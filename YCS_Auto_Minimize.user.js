@@ -10,92 +10,171 @@
 // @license      MIT
 // ==/UserScript==
 
-// v2.27 - Refactor for better performance, removed unnecessary transitions, added accessibility improvements.
+// v2.27 Added aria-label for better accessibility
 
-// Add required styles for the YCS menu minimization
-GM_addStyle(`
-  #ycs_minimize_bar {
-    cursor: pointer;
-    padding: 5px 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    background-color: transparent;
-    border-radius: 8px;
-    margin: 5px 0;
-    width: 100%;
+(function () {
+  "use strict";
+
+  // Configuration constants
+  const RETRY_DELAY = 1000; // Delay for retrying to find elements
+  const MAX_RETRIES = 10; // Maximum number of retries to find elements
+  const LOCAL_STORAGE_KEY = "ycs_minimized"; // LocalStorage key for state persistence
+
+  // Utility functions
+  function applyStyles() {
+    GM_addStyle(`
+      .ycs-minimize-bar {
+        width: calc(100% + 30px);
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        cursor: pointer;
+        padding: 10px 15px;
+        background-color: transparent;
+        border-radius: 10px;
+        box-sizing: border-box;
+        position: relative;
+        left: -15px;
+        z-index: 1000;
+      }
+
+      .ycs-minimize-bar:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .ycs-minimize-bar span {
+        font-size: 16px;
+        font-weight: bold;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+        text-align: left;
+        width: 100%;
+      }
+
+      .ycs-app-main {
+        display: block;
+      }
+
+      .ycs-app {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+        border: 1px solid #ccc;
+        padding-top: 0;
+      }
+    `);
   }
 
-  #ycs_minimize_bar:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+  // DOM Manipulation functions
+  function createMinimizeBar() {
+    const minimizeBar = document.createElement("div");
+    minimizeBar.classList.add("ycs-minimize-bar");
+
+    // Add aria-label for accessibility
+    minimizeBar.setAttribute("aria-label", "Toggle YCS menu visibility");
+
+    const text = document.createElement("span");
+    text.textContent = "Maximize YCS"; // Default text when minimized
+    minimizeBar.appendChild(text);
+
+    return minimizeBar;
   }
 
-  #ycs_minimize_text {
-    color: #333;
+  function addMinimizeBarToPage(minimizeBar) {
+    const ycsApp = document.querySelector(".ycs-app");
+
+    if (!ycsApp) {
+      console.warn("Cannot find .ycs-app, retrying...");
+      return false; // Failed to find the YCS app container
+    }
+
+    setDynamicPadding(ycsApp, minimizeBar);
+    ycsApp.insertBefore(minimizeBar, ycsApp.firstChild);
+    return true; // Successfully added the minimize bar
   }
 
-  #ycs_minimize_bar[aria-expanded="true"] #ycs_minimize_text {
-    color: #000;
+  function setDynamicPadding(ycsApp, minimizeBar) {
+    const appPadding = parseInt(window.getComputedStyle(ycsApp).paddingLeft, 10);
+    minimizeBar.style.paddingLeft = `${appPadding}px`;
   }
 
-  .ycs-app-main {
-    transition: none;
-  }
-`);
-
-// Utility function to store the state of the menu in localStorage
-const storeState = (state) => localStorage.setItem('ycs_minimized', state);
-
-// Utility function to get the state of the menu from localStorage
-const getState = () => localStorage.getItem('ycs_minimized');
-
-// Function to handle the state of the YCS menu
-const handleMenuState = (ycsApp, state) => {
-  const ycsMain = ycsApp.querySelector('.ycs-app-main');
-  const bar = document.getElementById('ycs_minimize_bar');
-  const text = document.getElementById('ycs_minimize_text');
-
-  if (state === 'minimized') {
-    ycsMain.style.display = 'none';
-    bar.setAttribute('aria-expanded', 'false');
-    text.textContent = 'Maximize YCS';
-  } else {
-    ycsMain.style.display = 'block';
-    bar.setAttribute('aria-expanded', 'true');
-    text.textContent = 'Minimize YCS';
-  }
-};
-
-// Function to initialize the YCS minimization
-const initMinimizer = () => {
-  const ycsApp = document.querySelector('.ycs-app');
-
-  if (!ycsApp) {
-    setTimeout(initMinimizer, 1000);
-    return;
+  // State management functions
+  function getInitialState() {
+    const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return savedState === "true"; // Return true if saved state is minimized
   }
 
-  const savedState = getState() || 'minimized';
-  const bar = document.createElement('div');
-  bar.id = 'ycs_minimize_bar';
-  bar.setAttribute('aria-expanded', savedState === 'maximized' ? 'true' : 'false');
-  
-  const text = document.createElement('span');
-  text.id = 'ycs_minimize_text';
-  text.textContent = savedState === 'maximized' ? 'Minimize YCS' : 'Maximize YCS';
+  function setMinimizedState(isMinimized) {
+    localStorage.setItem(LOCAL_STORAGE_KEY, isMinimized.toString());
+  }
 
-  bar.appendChild(text);
-  ycsApp.insertBefore(bar, ycsApp.firstChild);
+  // Bar interaction logic
+  function toggleMinimizeBar(minimizeBar, ycsApp) {
+    const main = ycsApp.querySelector(".ycs-app-main");
+    const text = minimizeBar.querySelector("span");
 
-  handleMenuState(ycsApp, savedState);
+    if (!main) return;
 
-  bar.addEventListener('click', () => {
-    const newState = savedState === 'maximized' ? 'minimized' : 'maximized';
-    storeState(newState);
-    handleMenuState(ycsApp, newState);
-  });
-};
+    if (main.style.display === "none") {
+      main.style.display = "block";
+      text.textContent = "Minimize YCS";
+      ycsApp.style.height = "";
+      setMinimizedState(false);
+    } else {
+      main.style.display = "none";
+      text.textContent = "Maximize YCS";
+      ycsApp.style.height = "40px";
+      setMinimizedState(true);
+    }
+  }
 
-// Initialize the script once the page is loaded
-initMinimizer();
+  function setupBarEventListener(minimizeBar, ycsApp) {
+    minimizeBar.addEventListener("click", () => toggleMinimizeBar(minimizeBar, ycsApp));
+  }
+
+  // Initialize the state and setup the bar
+  function initializeMenuState(ycsApp) {
+    const isMinimized = getInitialState();
+    const main = ycsApp.querySelector(".ycs-app-main");
+    const text = ycsApp.querySelector(".ycs-minimize-bar span");
+
+    if (!main) return;
+
+    if (isMinimized) {
+      main.style.display = "none";
+      ycsApp.style.height = "40px";
+      text.textContent = "Maximize YCS";
+    } else {
+      main.style.display = "block";
+      ycsApp.style.height = "";
+      text.textContent = "Minimize YCS";
+    }
+  }
+
+  // Core function to add the minimize bar
+  function addMinimizeBar() {
+    const minimizeBar = createMinimizeBar();
+    const ycsApp = document.querySelector(".ycs-app");
+
+    if (addMinimizeBarToPage(minimizeBar)) {
+      setupBarEventListener(minimizeBar, ycsApp);
+      initializeMenuState(ycsApp);
+    } else {
+      retryCount++;
+      if (retryCount > MAX_RETRIES) {
+        console.error("Max retries reached, couldn't find .ycs-app.");
+        return;
+      }
+      setTimeout(addMinimizeBar, RETRY_DELAY);
+    }
+  }
+
+  let retryCount = 0;
+
+  // Initialize the script
+  window.onload = function () {
+    applyStyles();
+    addMinimizeBar();
+  };
+})();
