@@ -1,6 +1,6 @@
 # YCS Auto Minimize
 
-A userscript to minimize the YCS (YouTube Comment Search) menu on YouTube pages, saving screen real estate. This script auto-toggles between minimized and maximized states based on your preferences, with a simple interface that enhances accessibility. The YCS menu is minimized by default, and the state is remembered across page reloads, ensuring a smoother and more personalized YouTube experience.
+A userscript to minimize the YCS (YouTube Comment Search) snd YCScont menu on YouTube pages, saving screen real estate. This script auto-toggles between minimized and maximized states based on your preferences, with a simple interface that enhances accessibility. The YCS menu is minimized by default, and the state is remembered across page reloads, ensuring a smoother and more personalized YouTube experience.
 
 ## Features
 
