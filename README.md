@@ -20,3 +20,10 @@ This script auto-toggles between minimized and maximized states based on your pr
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+## Github
+
+- [YCS Auto Minimize](https://github.com/eedo31/YCS-Auto-Minimize)
+- [YCS](https://github.com/sonigy/YCS)
+- [YCScont](https://github.com/pc035860/YCS-cont)
